@@ -6,6 +6,10 @@ import androidx.activity.EdgeToEdge;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Toast;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -53,16 +57,28 @@ public class MainActivity extends AppCompatActivity {
 
         dbHelper = new StudentDatabaseHelper(this);
 
+        // SearchView
         SearchView searchView = findViewById(R.id.searchView);
+        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        searchEditText.setTextColor(getResources().getColor(android.R.color.black));
+        searchEditText.setHintTextColor(getResources().getColor(android.R.color.darker_gray));
+
+        ImageView searchIcon = searchView.findViewById(androidx.appcompat.R.id.search_mag_icon);
+        ImageView closeIcon = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
+        searchIcon.setColorFilter(getResources().getColor(android.R.color.black));
+        closeIcon.setColorFilter(getResources().getColor(android.R.color.black));
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override public boolean onQueryTextSubmit(String query) { return false; }
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (adapter != null) adapter.filter(newText);
                 return true;
             }
         });
-
         loadStudents();
     }
 
@@ -72,10 +88,8 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         // Swipe & drag
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
-                ItemTouchHelper.UP | ItemTouchHelper.DOWN,
-                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT)
+        {
             @Override
             public boolean onMove(RecyclerView rv, RecyclerView.ViewHolder vh, RecyclerView.ViewHolder target) {
                 Collections.swap(adapter.getStudentList(), vh.getAdapterPosition(), target.getAdapterPosition());
@@ -86,12 +100,29 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSwiped(RecyclerView.ViewHolder vh, int dir) {
                 int pos = vh.getAdapterPosition();
-                dbHelper.deleteStudent(adapter.getStudentList().get(pos).getId());
-                adapter.getStudentList().remove(pos);
-                adapter.notifyItemRemoved(pos);
+
+                if (pos >= 0 && pos < adapter.getStudentList().size()) {
+                    Student student = adapter.getStudentList().get(pos);
+
+                    // Delete from database
+                    int deleted = dbHelper.deleteStudent(student.getId());
+
+                    if (deleted > 0) {
+                        Toast.makeText(MainActivity.this, "Deleted: " + student.getName(), Toast.LENGTH_SHORT).show();
+                    }
+
+                    // Remove from adapter
+                    adapter.getStudentList().remove(pos);
+                    adapter.notifyItemRemoved(pos);
+
+                    // Refresh both lists in adapter
+                    adapter.refreshData(dbHelper.getAllStudentsList());
+                }
             }
+
         }).attachToRecyclerView(recyclerView);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

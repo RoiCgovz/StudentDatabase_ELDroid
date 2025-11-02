@@ -98,7 +98,7 @@ public class MainActivity2 extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> finish());
     }
 
-    // Check permission and open image picker
+    // Check permission and Open image picker
     private void checkPermissionAndPick() {
         String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 ? Manifest.permission.READ_MEDIA_IMAGES
@@ -129,16 +129,16 @@ public class MainActivity2 extends AppCompatActivity {
                     InputStream inputStream = getContentResolver().openInputStream(selectedImageUri);
                     Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                     imgProfile.setImageBitmap(bitmap);
+                    assert inputStream != null;
                     inputStream.close();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    imgProfile.setImageResource(R.drawable.ic_person); // fallback
+                    imgProfile.setImageResource(R.drawable.ic_person);
                 }
             } else {
-                imgProfile.setImageResource(R.drawable.ic_person); // fallback
+                imgProfile.setImageResource(R.drawable.ic_person);
             }
 
-            // Set spinner selection
             for (int i = 0; i < spinnerCourse.getCount(); i++) {
                 if (spinnerCourse.getItemAtPosition(i).toString().equals(s.getCourse())) {
                     spinnerCourse.setSelection(i);
@@ -153,9 +153,16 @@ public class MainActivity2 extends AppCompatActivity {
         String name = etName.getText().toString().trim();
         String course = spinnerCourse.getSelectedItem().toString();
 
+        // Validate name
         if (name.isEmpty()) {
             etName.setError("Name must not be empty");
             etName.requestFocus();
+            return;
+        }
+
+        // Validate image
+        if (selectedImageUri == null) {
+            Toast.makeText(this, "Please select an image before saving", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -165,7 +172,7 @@ public class MainActivity2 extends AppCompatActivity {
             Uri savedUri = saveImageToInternalStorage(selectedImageUri);
             if (savedUri != null) {
                 imageUriStr = savedUri.toString();
-                selectedImageUri = savedUri; // update reference
+                selectedImageUri = savedUri;
             }
         }
 

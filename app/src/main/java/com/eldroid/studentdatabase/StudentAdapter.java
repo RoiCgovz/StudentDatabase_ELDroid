@@ -46,28 +46,29 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHold
         else
             h.image.setImageResource(R.drawable.ic_person);
 
-        // Open item on click (optional)
+        // Open item on click
         h.itemView.setOnClickListener(v -> {
             Intent i = new Intent(context, MainActivity2.class);
             i.putExtra("id", s.getId());
             editLauncher.launch(i);
         });
 
-        // More button (ImageView) popup
+        // More button (popup menu)
         h.moreBtn.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(context, h.moreBtn);
-            popup.inflate(R.menu.action_btns); // menu with edit & delete
+            popup.inflate(R.menu.action_btns);
             popup.setOnMenuItemClickListener(menuItem -> {
-
-                if (menuItem.getItemId() == R.id.action_edit) {
+                int itemId = menuItem.getItemId();
+                if (itemId == R.id.action_edit) {
                     Intent i = new Intent(context, MainActivity2.class);
                     i.putExtra("id", s.getId());
                     editLauncher.launch(i);
                     return true;
-                } else if (menuItem.getItemId() == R.id.action_edit) {
+                } else if (itemId == R.id.action_delete) {
                     dbHelper.deleteStudent(s.getId());
                     students.remove(pos);
                     notifyItemRemoved(pos);
+                    Toast.makeText(context, "Student deleted", Toast.LENGTH_SHORT).show();
                     return true;
                 } else {
                     return false;
@@ -115,4 +116,13 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHold
             course = v.findViewById(R.id.txtCourse);
         }
     }
+    @SuppressLint("NotifyDataSetChanged")
+    public void refreshData(List<Student> newList) {
+        students.clear();
+        allStudents.clear();
+        students.addAll(newList);
+        allStudents.addAll(newList);
+        notifyDataSetChanged();
+    }
+
 }
