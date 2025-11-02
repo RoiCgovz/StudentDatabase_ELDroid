@@ -1,79 +1,118 @@
 package com.eldroid.studentdatabase;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.content.Intent;
+import android.net.Uri;
+import android.view.*;
+import android.widget.*;
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.activity.result.ActivityResultLauncher;
+import java.util.ArrayList;
 import java.util.List;
 
-public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.StudentViewHolder> {
+public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHolder> {
 
-    private Context context;
-    private List<Student> studentList;
+    private final Context context;
+    private final List<Student> students;
+    private final List<Student> allStudents;
+    private final ActivityResultLauncher<Intent> editLauncher;
+    private final StudentDatabaseHelper dbHelper;
 
-    public StudentAdapter(Context context, List<Student> studentList) {
-        this.context = context;
-        this.studentList = studentList;
+    public StudentAdapter(Context ctx, List<Student> list, ActivityResultLauncher<Intent> launcher) {
+        context = ctx;
+        students = new ArrayList<>(list);
+        allStudents = new ArrayList<>(list);
+        editLauncher = launcher;
+        dbHelper = new StudentDatabaseHelper(ctx);
     }
 
     @NonNull
     @Override
-    public StudentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_student, parent, false);
-        return new StudentViewHolder(view);
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(context).inflate(R.layout.item_student, parent, false);
+        return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull StudentViewHolder holder, int position) {
-        Student student = studentList.get(position);
+    public void onBindViewHolder(@NonNull ViewHolder h, int pos) {
+        Student s = students.get(pos);
+        h.name.setText(s.getName());
+        h.course.setText(s.getCourse());
 
-        // Bind student info
-        holder.txtName.setText(student.getName());
-        holder.txtCourse.setText(student.getCourse());
-        holder.imgProfile.setImageResource(student.getImageResId());
+        if (s.getImageUri() != null && !s.getImageUri().isEmpty())
+            h.image.setImageURI(Uri.parse(s.getImageUri()));
+        else
+            h.image.setImageResource(R.drawable.ic_person);
 
-        // Show popup menu when "more" ImageView is clicked
-        holder.imgOptions.setOnClickListener(v -> {
-            PopupMenu popup = new PopupMenu(v.getContext(), v);
-            popup.inflate(R.menu.action_btns);
+        // Open item on click (optional)
+        h.itemView.setOnClickListener(v -> {
+            Intent i = new Intent(context, MainActivity2.class);
+            i.putExtra("id", s.getId());
+            editLauncher.launch(i);
+        });
 
-            popup.setOnMenuItemClickListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.action_edit) {
-                    Toast.makeText(v.getContext(), "Edit " + student.getName(), Toast.LENGTH_SHORT).show();
-                } else if (id == R.id.action_delete) {
-                    Toast.makeText(v.getContext(), "Delete " + student.getName(), Toast.LENGTH_SHORT).show();
+        // More button (ImageView) popup
+        h.moreBtn.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(context, h.moreBtn);
+            popup.inflate(R.menu.action_btns); // menu with edit & delete
+            popup.setOnMenuItemClickListener(menuItem -> {
+
+                if (menuItem.getItemId() == R.id.action_edit) {
+                    Intent i = new Intent(context, MainActivity2.class);
+                    i.putExtra("id", s.getId());
+                    editLauncher.launch(i);
+                    return true;
+                } else if (menuItem.getItemId() == R.id.action_edit) {
+                    dbHelper.deleteStudent(s.getId());
+                    students.remove(pos);
+                    notifyItemRemoved(pos);
+                    return true;
+                } else {
+                    return false;
                 }
-                return true;
             });
-
             popup.show();
         });
     }
 
-
     @Override
     public int getItemCount() {
-        return studentList.size();
+        return students.size();
     }
 
-    public static class StudentViewHolder extends RecyclerView.ViewHolder {
-        ImageView imgProfile, imgOptions;
-            TextView txtName, txtCourse;
+    @SuppressLint("NotifyDataSetChanged")
+    public void filter(String text) {
+        students.clear();
+        if (text == null || text.trim().isEmpty()) {
+            students.addAll(allStudents);
+        } else {
+            String query = text.toLowerCase();
+            for (Student s : allStudents) {
+                if (s.getName().toLowerCase().contains(query) ||
+                        s.getCourse().toLowerCase().contains(query)) {
+                    students.add(s);
+                }
+            }
+        }
+        notifyDataSetChanged();
+    }
 
-        public StudentViewHolder(@NonNull View itemView) {
-            super(itemView);
-            imgProfile = itemView.findViewById(R.id.imgProfile);
-            txtName = itemView.findViewById(R.id.txtName);
-            txtCourse = itemView.findViewById(R.id.txtCourse);
-            imgOptions = itemView.findViewById(R.id.imgOptions);
+    public List<Student> getStudentList() {
+        return students;
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        ImageView image, moreBtn;
+        TextView name, course;
+
+        ViewHolder(View v) {
+            super(v);
+            image = v.findViewById(R.id.imgProfile);
+            moreBtn = v.findViewById(R.id.moreBtn);
+            name = v.findViewById(R.id.txtName);
+            course = v.findViewById(R.id.txtCourse);
         }
     }
 }

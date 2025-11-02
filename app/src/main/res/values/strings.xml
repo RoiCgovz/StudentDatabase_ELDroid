@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">StudentDatabase</string>
+
+    <string-array name="courses_spinner">
+        <item>BSCS</item>
+        <item>BSIT</item>
+        <item>BSHM</item>
+        <item>BSCrim</item>
+        <item>BSCPE</item>
+    </string-array>
 </resources>

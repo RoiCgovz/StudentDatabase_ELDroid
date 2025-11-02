@@ -69,7 +69,7 @@
 
             <!-- Pop up options -->
             <ImageView
-                android:id="@+id/imgOptions"
+                android:id="@+id/moreBtn"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:src="@drawable/ic_more_vert"
