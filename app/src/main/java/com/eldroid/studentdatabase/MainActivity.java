@@ -3,7 +3,6 @@ package com.eldroid.studentdatabase;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
-
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -40,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         EdgeToEdge.enable(this);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -62,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
         EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
         searchEditText.setTextColor(getResources().getColor(android.R.color.black));
         searchEditText.setHintTextColor(getResources().getColor(android.R.color.darker_gray));
-
         ImageView searchIcon = searchView.findViewById(androidx.appcompat.R.id.search_mag_icon);
         ImageView closeIcon = searchView.findViewById(androidx.appcompat.R.id.search_close_btn);
         searchIcon.setColorFilter(getResources().getColor(android.R.color.black));
@@ -70,59 +69,64 @@ public class MainActivity extends AppCompatActivity {
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(String query) {
-                return false;
-            }
+            public boolean onQueryTextSubmit(String query) { return false; }
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (adapter != null) adapter.filter(newText);
                 return true;
             }
         });
+
         loadStudents();
     }
 
     private void loadStudents() {
         List<Student> studentList = dbHelper.getAllStudentsList();
-        adapter = new StudentAdapter(this, studentList, editLauncher);
-        recyclerView.setAdapter(adapter);
 
-        // Swipe & drag
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT)
-        {
-            @Override
-            public boolean onMove(RecyclerView rv, RecyclerView.ViewHolder vh, RecyclerView.ViewHolder target) {
-                Collections.swap(adapter.getStudentList(), vh.getAdapterPosition(), target.getAdapterPosition());
-                adapter.notifyItemMoved(vh.getAdapterPosition(), target.getAdapterPosition());
-                return true;
-            }
+        if (adapter == null) {
+            adapter = new StudentAdapter(this, studentList, editLauncher);
+            recyclerView.setAdapter(adapter);
 
-            @Override
-            public void onSwiped(RecyclerView.ViewHolder vh, int dir) {
-                int pos = vh.getAdapterPosition();
+            // Swipe delete and  drag
+            new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
+                    ItemTouchHelper.UP | ItemTouchHelper.DOWN,
+                    ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
 
-                if (pos >= 0 && pos < adapter.getStudentList().size()) {
-                    Student student = adapter.getStudentList().get(pos);
-
-                    // Delete from database
-                    int deleted = dbHelper.deleteStudent(student.getId());
-
-                    if (deleted > 0) {
-                        Toast.makeText(MainActivity.this, "Deleted: " + student.getName(), Toast.LENGTH_SHORT).show();
-                    }
-
-                    // Remove from adapter
-                    adapter.getStudentList().remove(pos);
-                    adapter.notifyItemRemoved(pos);
-
-                    // Refresh both lists in adapter
-                    adapter.refreshData(dbHelper.getAllStudentsList());
+                @Override
+                public boolean onMove(RecyclerView rv, RecyclerView.ViewHolder vh, RecyclerView.ViewHolder target) {
+                    Collections.swap(adapter.getStudentList(),
+                            vh.getAdapterPosition(),
+                            target.getAdapterPosition());
+                    adapter.notifyItemMoved(vh.getAdapterPosition(), target.getAdapterPosition());
+                    return true;
                 }
-            }
 
-        }).attachToRecyclerView(recyclerView);
+                @Override
+                public void onSwiped(RecyclerView.ViewHolder vh, int dir) {
+                    int pos = vh.getAdapterPosition();
+
+                    if (pos >= 0 && pos < adapter.getStudentList().size()) {
+                        Student student = adapter.getStudentList().get(pos);
+
+                        dbHelper.deleteStudent(student.getId());
+                        adapter.getStudentList().remove(pos);
+                        adapter.notifyItemRemoved(pos);
+
+                        Toast.makeText(MainActivity.this,
+                                "Deleted: " + student.getName(), Toast.LENGTH_SHORT).show();
+
+                        adapter.refreshData(dbHelper.getAllStudentsList());
+                    }
+                }
+
+            }).attachToRecyclerView(recyclerView);
+
+        } else {
+
+            adapter.refreshData(studentList);
+        }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@drawable/bg_days_gone">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,9 +17,9 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/title_color"
+            android:background="@color/black"
             app:title="Fajardo, Roilene Vhinz"
-            app:titleTextColor="@android:color/black" />
+            app:titleTextColor="@android:color/white" />
 
         <!-- Search Bar -->
         <RelativeLayout
@@ -28,26 +28,32 @@
 
             <androidx.appcompat.widget.SearchView
                 android:id="@+id/searchView"
+                style="@style/SearchViewStyle"
+                android:hint="Search Student Name..."
+                android:background="@color/white"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_alignParentTop="true"
                 android:layout_alignParentEnd="true"
-                android:layout_marginStart="0dp"
-                android:layout_marginTop="0dp"
-                android:layout_marginEnd="1dp"
+                android:layout_marginStart="-1dp"
+                android:layout_marginTop="1dp"
+                android:layout_marginEnd="2dp"
+                app:searchIcon="@drawable/ic_search"
                 android:iconifiedByDefault="false"
-                android:queryHint="Search..."
-                style="@style/SearchViewStyle"/>
+                android:queryHint="Search..." />
 
         </RelativeLayout>
 
         <!-- Recycler View -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/studentRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/border_color" />
+            android:layout_width="350dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_height="600dp"
+            android:layout_marginTop="10dp"
+            android:elevation="20dp"
+            android:background="@android:color/transparent"/>
 
     </LinearLayout>
 </LinearLayout>

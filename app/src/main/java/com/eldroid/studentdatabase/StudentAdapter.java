@@ -15,8 +15,8 @@ import java.util.List;
 public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHolder> {
 
     private final Context context;
-    private final List<Student> students;
-    private final List<Student> allStudents;
+    private final List<Student> students;     // filtered list
+    private final List<Student> allStudents;  // original list
     private final ActivityResultLauncher<Intent> editLauncher;
     private final StudentDatabaseHelper dbHelper;
 
@@ -38,6 +38,7 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder h, int pos) {
         Student s = students.get(pos);
+
         h.name.setText(s.getName());
         h.course.setText(s.getCourse());
 
@@ -46,33 +47,32 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHold
         else
             h.image.setImageResource(R.drawable.ic_person);
 
-        // Open item on click
+        // open edit page
         h.itemView.setOnClickListener(v -> {
             Intent i = new Intent(context, MainActivity2.class);
             i.putExtra("id", s.getId());
             editLauncher.launch(i);
         });
 
-        // More button (popup menu)
+        // more button
         h.moreBtn.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(context, h.moreBtn);
             popup.inflate(R.menu.action_btns);
-            popup.setOnMenuItemClickListener(menuItem -> {
-                int itemId = menuItem.getItemId();
-                if (itemId == R.id.action_edit) {
+            popup.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == R.id.action_edit) {
                     Intent i = new Intent(context, MainActivity2.class);
                     i.putExtra("id", s.getId());
                     editLauncher.launch(i);
                     return true;
-                } else if (itemId == R.id.action_delete) {
+                }
+                if (item.getItemId() == R.id.action_delete) {
                     dbHelper.deleteStudent(s.getId());
                     students.remove(pos);
                     notifyItemRemoved(pos);
                     Toast.makeText(context, "Student deleted", Toast.LENGTH_SHORT).show();
                     return true;
-                } else {
-                    return false;
                 }
+                return false;
             });
             popup.show();
         });
@@ -83,25 +83,41 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHold
         return students.size();
     }
 
+    // ------------------------------
+    // ✔ FILTER NAME ONLY
+    // ------------------------------
     @SuppressLint("NotifyDataSetChanged")
     public void filter(String text) {
         students.clear();
+
         if (text == null || text.trim().isEmpty()) {
             students.addAll(allStudents);
         } else {
             String query = text.toLowerCase();
             for (Student s : allStudents) {
-                if (s.getName().toLowerCase().contains(query) ||
-                        s.getCourse().toLowerCase().contains(query)) {
+                if (s.getName().toLowerCase().contains(query)) {
                     students.add(s);
                 }
             }
         }
+
         notifyDataSetChanged();
     }
 
     public List<Student> getStudentList() {
         return students;
+    }
+
+    // Refresh list after delete/edit
+    @SuppressLint("NotifyDataSetChanged")
+    public void refreshData(List<Student> newList) {
+        students.clear();
+        allStudents.clear();
+
+        students.addAll(newList);
+        allStudents.addAll(newList);
+
+        notifyDataSetChanged();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -116,13 +132,4 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.ViewHold
             course = v.findViewById(R.id.txtCourse);
         }
     }
-    @SuppressLint("NotifyDataSetChanged")
-    public void refreshData(List<Student> newList) {
-        students.clear();
-        allStudents.clear();
-        students.addAll(newList);
-        allStudents.addAll(newList);
-        notifyDataSetChanged();
-    }
-
 }
